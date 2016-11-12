@@ -1,6 +1,6 @@
--- Movie columns - 	id	title	imdbID	spanishTitle	imdbPictureURL	year	
---			rtID	rtAllCriticsRating	rtAllCriticsNumReviews	rtAllCriticsNumFresh	
--- 			rtAllCriticsNumRotten	rtAllCriticsScore	rtTopCriticsRating	rtTopCriticsNumReviews	
+-- Movie columns - 	id	title	imdbID	spanishTitle	imdbPictureURL	year
+--			rtID	rtAllCriticsRating	rtAllCriticsNumReviews	rtAllCriticsNumFresh
+-- 			rtAllCriticsNumRotten	rtAllCriticsScore	rtTopCriticsRating	rtTopCriticsNumReviews
 -- 			rtTopCriticsNumFresh	rtTopCriticsNumRotten	rtTopCriticsScore	rtAudienceRating	rtAudienceNumRatings	rtAudienceScore	rtPictureURL
 
 CREATE TABLE movies(
@@ -48,7 +48,7 @@ CREATE TABLE movie_directors(
 	directorID 	VARCHAR2(30) NOT NULL,
 	directorName 	VARCHAR2(70) NOT NULL,
 	PRIMARY KEY (movieID, directorID),
-	FOREIGN KEY (movieID) REFERENCES movies(id)		
+	FOREIGN KEY (movieID) REFERENCES movies(id)
 		ON DELETE CASCADE
 );
 -- INSERT INTO movie_directors VALUES(1, 'john_lasseter', 'John Lasseter');
@@ -84,7 +84,7 @@ CREATE TABLE movie_locations(
 	location2	VARCHAR2(70),
 	location3	VARCHAR2(70),
 	location4 	VARCHAR2(70),
-	-- PRIMARY KEY(movieID, location1, location2, location3, location4),	
+	-- PRIMARY KEY(movieID, location1, location2, location3, location4),
 	FOREIGN KEY(movieID) REFERENCES movies(id)
 		ON DELETE CASCADE
 );
@@ -97,7 +97,7 @@ CREATE TABLE tags(
 );
 -- INSERT INTO tags VALUES(7, 'funny');
 
--- movie_tags - 	    1 movieID tagID   tagWeight 
+-- movie_tags - 	    1 movieID tagID   tagWeight
 
 CREATE TABLE movie_tags(
 	movieID 	NUMBER NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE user_ratedmovies_timestamps(
 	userID 		NUMBER NOT NULL,
 	movieID 	NUMBER NOT NULL,
 	rating 		NUMBER NOT NULL,
-	timestamp 	NUMBER NOT NULL,	
+	timestamp 	NUMBER NOT NULL,
 	PRIMARY KEY(userID, movieID),
 	FOREIGN KEY(movieID) REFERENCES movies(id)
 		ON DELETE CASCADE
@@ -166,7 +166,7 @@ CREATE TABLE user_taggedmovies_timestamps(
 	userID 		NUMBER NOT NULL,
 	movieID 	NUMBER NOT NULL,
 	tagID	 	NUMBER NOT NULL,
-	timestamp 	NUMBER NOT NULL,	
+	timestamp 	NUMBER NOT NULL,
 	PRIMARY KEY(userID, movieID, tagID),
 	FOREIGN KEY(movieID) REFERENCES movies(id)
 		ON DELETE CASCADE,
@@ -174,3 +174,41 @@ CREATE TABLE user_taggedmovies_timestamps(
 		ON DELETE CASCADE
 );
 -- INSERT INTO user_taggedmovies_timestamps VALUES (170, 1, 7, 1162208198000);
+
+
+CREATE OR REPLACE VIEW movie_view AS
+	SELECT
+		movie_group.movie_id as movie_id,
+		movie_group.movie_title as movie_title,
+		movie_group.actor_name as actor_name,
+		movie_group.country as country,
+		movie_group.director_name as director_name,
+		movie_genres.genres as movie_genres,
+		movie_group.average_rating as average_rating,
+		movie_group.num_ratings as num_ratings,
+		movie_group.year as movie_year
+	FROM (
+		SELECT DISTINCT
+			movies.id as movie_id,
+			movies.title as movie_title,
+			movie_actors.actorname as actor_name,
+			movie_countries.country as country,
+			movie_directors.directorname as director_name,
+			movies.year as year,
+			(movies.rtAllCriticsRating + movies.rtTopCriticsRating + movies.rtAudienceRating) / 3.0 as average_rating,
+			rtAllCriticsNumReviews + rtTopCriticsNumReviews + rtAudienceNumRatings as num_ratings
+		FROM movies, movie_countries, movie_actors, movie_directors
+		WHERE movies.id = movie_countries.movieid
+		AND movie_actors.movieid = movies.id
+		AND movie_directors.movieid = movies.id
+	) movie_group
+	INNER JOIN (
+		SELECT movie_id,
+		LISTAGG(genre, ', ') WITHIN GROUP (ORDER BY genre) genres
+		FROM movie_genres GROUP BY movie_id
+	) movie_genres
+	ON movie_group.movie_id = movie_genres.movie_id;
+
+	--CREATE VIEW movie_ratings_view AS
+	--SELECT
+--		movies.id as movie_id,
