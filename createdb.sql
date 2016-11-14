@@ -45,7 +45,7 @@ CREATE TABLE movie_genres(
 
 CREATE TABLE movie_directors(
 	movieID 	NUMBER NOT NULL UNIQUE,
-	directorID 	VARCHAR2(30) NOT NULL,
+	directorID 	VARCHAR2(70) NOT NULL,
 	directorName 	VARCHAR2(70) NOT NULL,
 	PRIMARY KEY (movieID, directorID),
 	FOREIGN KEY (movieID) REFERENCES movies(id)
@@ -56,8 +56,8 @@ CREATE TABLE movie_directors(
 -- movie countries -  	movieID  	country
 CREATE TABLE movie_countries(
 	movieID 	NUMBER NOT NULL UNIQUE,
-	country 	VARCHAR2(70) NOT NULL,
-	PRIMARY KEY(movieID, country),
+	country 	VARCHAR2(70),
+	--PRIMARY KEY(movieID, country),
 	FOREIGN KEY(movieID) REFERENCES movies(id)
 		ON DELETE CASCADE
 );
@@ -66,8 +66,8 @@ CREATE TABLE movie_countries(
 -- movie_actors - movieID actorID actorName   ranking
 CREATE TABLE movie_actors(
 	movieID 	NUMBER NOT NULL,
-	actorID 	VARCHAR2(30) NOT NULL,
-	actorName	VARCHAR2(70) NOT NULL,
+	actorID 	VARCHAR2(70) NOT NULL,
+	actorName	VARCHAR2(70),
 	ranking 	NUMBER NOT NULL,
 	PRIMARY KEY (movieID, actorID),
 	FOREIGN KEY (movieID) REFERENCES movies(id)
@@ -80,10 +80,10 @@ CREATE TABLE movie_actors(
 -- movie_locations - 	     movieID location1   location2   location3   location4
 CREATE TABLE movie_locations(
 	movieID 	NUMBER NOT NULL,
-	location1	VARCHAR2(70),
-	location2	VARCHAR2(70),
-	location3	VARCHAR2(70),
-	location4 	VARCHAR2(70),
+	location1	VARCHAR2(200),
+	location2	VARCHAR2(200),
+	location3	VARCHAR2(200),
+	location4 	VARCHAR2(200),
 	-- PRIMARY KEY(movieID, location1, location2, location3, location4),
 	FOREIGN KEY(movieID) REFERENCES movies(id)
 		ON DELETE CASCADE
@@ -176,8 +176,19 @@ CREATE TABLE user_taggedmovies_timestamps(
 -- INSERT INTO user_taggedmovies_timestamps VALUES (170, 1, 7, 1162208198000);
 
 
+CREATE INDEX movie_actor_index on movie_actors (actorid, movieid);
+CREATE INDEX movie_actorname_index on movie_actors (actorname, movieid);
+CREATE INDEX movie_year_index on movies (year, id);
+CREATE INDEX movie_genre_index on movie_genres (genre, movie_id);
+CREATE INDEX movie_countries_index on movie_countries (country, movieid);
+CREATE INDEX movie_directors_index on movie_directors (directorname, movieid);
+CREATE INDEX user_ratedmovies_rating_index on user_ratedmovies_timestamps (rating, movieid);
+CREATE INDEX user_ratedmovies_time_index on user_ratedmovies_timestamps (timestamp, movieid);
+CREATE INDEX user_ratedmovies_ur_index on user_ratedmovies_timestamps(rating, userid);
+
+
 CREATE OR REPLACE VIEW movie_view AS
-	SELECT
+	SELECT DISTINCT
 		movie_group.movie_id as movie_id,
 		movie_group.movie_title as movie_title,
 		movie_group.actor_name as actor_name,
@@ -207,7 +218,12 @@ CREATE OR REPLACE VIEW movie_view AS
 		LISTAGG(genre, ', ') WITHIN GROUP (ORDER BY genre) genres
 		FROM movie_genres GROUP BY movie_id
 	) movie_genres
-	ON movie_group.movie_id = movie_genres.movie_id;
+	ON movie_group.movie_id = movie_genres.movie_id
+
+CREATE OR REPLACE VIEW movie_with_user_ratings AS
+SELECT * FROM movie_view, user_ratedmovies_timestamps
+WHERE movie_view.movie_id = user_ratedmovies_timestamps.movieid;
+
 
 	--CREATE VIEW movie_ratings_view AS
 	--SELECT

@@ -62,9 +62,12 @@ public class Populate {
 		} catch (SQLException e) {
 			System.err.println("Errors occurs when communicating with the database server: " + e.getMessage());
 			e.printStackTrace();
+      System.exit(1);
+
 		} catch (Throwable any) {
 			System.out.println("Java ERROR: "+any);
 			any.printStackTrace();
+      System.exit(1);
 		}finally {
 			// Never forget to close database connection
 			closeConnection(con);
@@ -88,7 +91,12 @@ public class Populate {
 
 
 			String table_name = filename.substring(0, filename.lastIndexOf('.'));
-			table_name = table_name.substring(table_name.lastIndexOf("/")+1).replace("-","_");
+      if (table_name.lastIndexOf("/") == -1) {
+        table_name = table_name.substring(table_name.lastIndexOf("\\")+1).replace("-", "_");
+      }
+      else {
+        table_name = table_name.substring(table_name.lastIndexOf("/")+1).replace("-","_");
+      }
 
 			System.out.println("TABLE NAME: " + table_name);
 
@@ -102,20 +110,35 @@ public class Populate {
 			}*/
 
 			String line = s.readLine();
+      int num_columns = line.split("\\s+").length;
+      System.out.println("NUM_COLUMNS: " + num_columns + "\t" + Arrays.toString(line.split("\\s+")));
+
 			line = s.readLine();
 			while (line != null) {
 			   //System.out.println("LINE: " + line);
-			   String [] split = line.split("\t", 0);
+			   String [] split = new String[num_columns];
+         String [] line_split = line.split("\t", 0);
+         System.arraycopy(line_split, 0, split, 0, line_split.length);
+         if (line_split.length != num_columns) {
+           System.out.println("NOT ENOUGH VALUES");
+           System.out.println("LINE_SPLIT: " + Arrays.toString(split));
+           for(int copy = line_split.length; copy < num_columns -line_split.length; copy++) {
+             split[copy] = null;
+           }
+         }
+
 			   //System.out.println("SPLIT: " + Arrays.toString(split));
-			    for(int x = 0; x < split.length; x++) {
-				//System.out.println("Checking for isNumeric: " + split[x]);
-				if (split[x].equals("\\N")) {
-					split[x] = null;
-				}
-				else if(!isNumeric(split[x])){
-						split[x] = split[x].replace("'", "''");
-						split[x] = "'" + split[x] + "'";
-				}
+			  for(int x = 0; x < split.length; x++) {
+				      //System.out.println("Checking for isNumeric: " + split[x]);
+              if (split[x] == null) {
+              }
+              else if (split[x].equals("\\N") || split[x].equals("\\n")) {
+					           split[x] = null;
+				      }
+      				else if(!isNumeric(split[x])){
+      						split[x] = split[x].replace("'", "''");
+      						split[x] = "'" + split[x] + "'";
+      				}
 			    }
 			    String values = String.join(",", split);
 
@@ -131,8 +154,10 @@ public class Populate {
 			s.close();
 		} catch (FileNotFoundException ex) {
 			System.err.println("File not found");
+      System.exit(1);
 		} catch (IOException ex) {
 			System.err.println("IO Exception");
+      System.exit(1);
 		}
 	}
 
