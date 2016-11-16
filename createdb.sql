@@ -187,7 +187,9 @@ CREATE INDEX movie_directors_index on movie_directors (directorname, movieid);
 CREATE INDEX user_ratedmovies_rating_index on user_ratedmovies_timestamps (rating, movieid);
 CREATE INDEX user_ratedmovies_time_index on user_ratedmovies_timestamps (timestamp, movieid);
 CREATE INDEX user_ratedmovies_ur_index on user_ratedmovies_timestamps(rating, userid);
-
+CREATE INDEX user_taggedmovies_time_idx on user_taggedmovies_timestamps(timestamp, tagid);
+CREATE INDEX user_taggedmovies_idx on user_taggedmovies_timestamps(tagid, userid);
+CREATE INDEX user_taggedmovies_tags_idx on user_taggedmovies_timestamps(tagid, movieid);
 
 CREATE OR REPLACE VIEW movie_view AS
 	SELECT DISTINCT
@@ -208,7 +210,7 @@ CREATE OR REPLACE VIEW movie_view AS
 			movie_countries.country as country,
 			movie_directors.directorname as director_name,
 			movies.year as year,
-			(movies.rtAllCriticsRating + movies.rtTopCriticsRating + movies.rtAudienceRating) / 3.0 as average_rating,
+			ROUND((movies.rtAllCriticsRating + movies.rtTopCriticsRating + movies.rtAudienceRating) / 3.0, 2) as average_rating,
 			rtAllCriticsNumReviews + rtTopCriticsNumReviews + rtAudienceNumRatings as num_ratings
 		FROM movies, movie_countries, movie_actors, movie_directors
 		WHERE movies.id = movie_countries.movieid
@@ -230,10 +232,6 @@ SELECT DISTINCT
 	ROUND((movies.rtAllCriticsRating + movies.rtTopCriticsRating + movies.rtAudienceRating) / 3.0, 2) as average_rating,
 	rtAllCriticsNumReviews + rtTopCriticsNumReviews + rtAudienceNumRatings as num_ratings
 FROM movies;
-
-CREATE OR REPLACE VIEW movie_with_user_ratings AS
-SELECT * FROM movie_view, user_ratedmovies_timestamps
-WHERE movie_view.movie_id = user_ratedmovies_timestamps.movieid;
 
 CREATE OR REPLACE VIEW genre_list AS
 SELECT movie_id,
