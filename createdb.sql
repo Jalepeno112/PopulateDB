@@ -178,8 +178,10 @@ CREATE TABLE user_taggedmovies_timestamps(
 
 CREATE INDEX movie_actor_index on movie_actors (actorid, movieid);
 CREATE INDEX movie_actorname_index on movie_actors (actorname, movieid);
+CREATE INDEX movie_actorname_id_idx on movie_actors(movieid);
 CREATE INDEX movie_year_index on movies (year, id);
 CREATE INDEX movie_genre_index on movie_genres (genre, movie_id);
+CREATE INDEX movie_genre_id_idx on movie_genres(movie_id);
 CREATE INDEX movie_countries_index on movie_countries (country, movieid);
 CREATE INDEX movie_directors_index on movie_directors (directorname, movieid);
 CREATE INDEX user_ratedmovies_rating_index on user_ratedmovies_timestamps (rating, movieid);
@@ -220,9 +222,23 @@ CREATE OR REPLACE VIEW movie_view AS
 	) movie_genres
 	ON movie_group.movie_id = movie_genres.movie_id
 
+CREATE OR REPLACE VIEW sub_movies AS
+SELECT DISTINCT
+	movies.id as movie_id,
+	movies.title as movie_title,
+	movies.year as year,
+	ROUND((movies.rtAllCriticsRating + movies.rtTopCriticsRating + movies.rtAudienceRating) / 3.0, 2) as average_rating,
+	rtAllCriticsNumReviews + rtTopCriticsNumReviews + rtAudienceNumRatings as num_ratings
+FROM movies;
+
 CREATE OR REPLACE VIEW movie_with_user_ratings AS
 SELECT * FROM movie_view, user_ratedmovies_timestamps
 WHERE movie_view.movie_id = user_ratedmovies_timestamps.movieid;
+
+CREATE OR REPLACE VIEW genre_list AS
+SELECT movie_id,
+LISTAGG(genre, ', ') WITHIN GROUP (ORDER BY genre) genres
+FROM movie_genres GROUP BY movie_id;
 
 
 	--CREATE VIEW movie_ratings_view AS
