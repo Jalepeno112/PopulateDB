@@ -1,0 +1,12 @@
+DROP INDEX movie_actor_index;
+DROP INDEX movie_genre_index;
+DROP INDEX movie_countries_index;
+DROP INDEX movie_directors_index;
+DROP INDEX user_ratedmovies_rating_index;
+DROP INDEX movie_actorname_index;
+DROP INDEX movie_year_index;
+DROP INDEX user_ratedmovies_rating_index;
+DROP INDEX user_ratedmovies_time_index;
+DROP INDEX user_ratedmovies_ur_index;
+DROP INDEX movie_genre_id_idx;
+DROP INDEX movie_actorname_id_idx;
